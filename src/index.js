@@ -379,3 +379,76 @@ handler.setInputAction((input) => { //left click input action
 handler.setInputAction((input) => { //mouse scroll
     checkCameraZoom();
 }, ScreenSpaceEventType.WHEEL);
+// CHATBOT IMPLEMENTATION
+const chatbotSendButton = document.getElementById('chatbot-send');
+const chatbotInput = document.getElementById('chatbot-input');
+const chatbotMessages = document.getElementById('chatbot-messages');
+
+const apiKey = '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';
+const apiUrl = 'https://api.openai.com/v1/chat/completions';
+
+const addMessage = (message, sender) => {
+  const messageElement = document.createElement('div');
+  messageElement.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+  messageElement.innerText = message;
+  chatbotMessages.appendChild(messageElement);
+  chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+};
+
+const getBotResponse = async (userMessage) => {
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant for a satellite tracking application. Respond using space-related terminology and metaphors. Keep your answers concise and relevant to space exploration, astronomy, and satellites.'
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error fetching from OpenAI:', error);
+    return 'My communication systems are facing some cosmic interference. Please try again later.';
+  }
+};
+
+const sendMessage = async () => {
+  const userMessage = chatbotInput.value.trim();
+  if (userMessage === '') return;
+
+  addMessage(userMessage, 'user');
+  chatbotInput.value = '';
+
+  const botMessage = await getBotResponse(userMessage);
+  addMessage(botMessage, 'bot');
+};
+
+chatbotSendButton.addEventListener('click', sendMessage);
+chatbotInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+// Initial bot message
+setTimeout(() => {
+    addMessage("Greetings, stargazer! I am your celestial guide. Ask me anything about the cosmos.", "bot");
+}, 1000);

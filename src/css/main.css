@@ -98,3 +98,73 @@ input[disabled] + label.custom-control-label {
   font-size: large;
   user-select: none;
 }
+
+#chatbot-container {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 300px;
+  height: 400px;
+  background: rgba(42, 42, 42, 0.9);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+#chatbot-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  color: white;
+  padding-right: 5px;
+}
+
+#chatbot-input-container {
+  display: flex;
+}
+
+#chatbot-input {
+  flex-grow: 1;
+  border: 1px solid #555;
+  background: #333;
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+#chatbot-send {
+  margin-left: 5px;
+  background: #555;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#chatbot-send:hover {
+  background: #777;
+}
+
+.user-message, .bot-message {
+  margin-bottom: 8px;
+  padding: 6px;
+  border-radius: 4px;
+  word-wrap: break-word;
+}
+
+.user-message {
+  background: #007bff;
+  color: white;
+  align-self: flex-end;
+  text-align: right;
+}
+
+.bot-message {
+  background: #444;
+  color: #eee;
+  align-self: flex-start;
+}
