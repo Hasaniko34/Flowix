@@ -13,7 +13,9 @@ module.exports = [{
     },
     output: {
         filename: '[name].js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, 'dist'),
+        // Needed to compile multi-line strings in Cesium
+        sourcePrefix: ''
     },
     devtool: 'eval',
     node: {
@@ -25,7 +27,11 @@ module.exports = [{
         zlib: "empty"
     },
     resolve: {
-        mainFields: ['module', 'main']
+        mainFields: ['module', 'main'],
+        alias: {
+            cesium$: path.resolve(__dirname, 'node_modules/cesium/Source/Cesium.js'),
+            cesium: path.resolve(__dirname, 'node_modules/cesium')
+        }
     },
     module: {
         rules: [{
@@ -34,6 +40,19 @@ module.exports = [{
         }, {
             test: /\.(png|jpg|jpeg|gif|svg|xml)$/,
             use: ['url-loader']
+        }, {
+            // Strip cesium pragmas
+            test: /\.js$/,
+            enforce: 'pre',
+            include: path.resolve(__dirname, 'node_modules/cesium/Source'),
+            use: [{
+                loader: 'strip-pragma-loader',
+                options: {
+                    pragmas: {
+                        debug: false
+                    }
+                }
+            }]
         }]
     },
     plugins: [

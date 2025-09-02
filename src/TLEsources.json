@@ -3,60 +3,70 @@
     "name": "active",
     "label-pl": "Wszystkie aktywne",
     "label-en": "All active",
+    "label-tr": "Tümü aktif",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"
   },
   {
     "name": "brightest",
     "label-pl": "Najjaśniejsze",
     "label-en": "The brightest",
+    "label-tr": "En parlak",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
   },
   {
     "name": "weather",
     "label-pl": "Meteorologiczne",
     "label-en": "Weather",
+    "label-tr": "Hava durumu",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=tle"
   },
   {
     "name": "geosync",
     "label-pl": "Geosynchroniczne",
     "label-en": "Geosynchronous",
+    "label-tr": "Yere eşzamanlı",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=tle"
   },
   {
     "name": "iridiumNEXT",
     "label-pl": "IridiumNEXT",
     "label-en": "IridiumNEXT",
+    "label-tr": "IridiumNEXT",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=iridium-NEXT&FORMAT=tle"
   },
   {
     "name": "starlink",
     "label-pl": "Starlink",
     "label-en": "Starlink",
+    "label-tr": "Starlink",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle"
   },
   {
     "name": "gps",
     "label-pl": "GPS",
     "label-en": "GPS",
+    "label-tr": "GPS",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=gps-ops&FORMAT=tle"
   },
   {
     "name": "glonass",
     "label-pl": "GLONASS",
     "label-en": "GLONASS",
+    "label-tr": "GLONASS",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=glo-ops&FORMAT=tle"
   },
   {
     "name": "galileo",
     "label-pl": "Galileo",
     "label-en": "Galileo",
+    "label-tr": "Galileo",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=galileo&FORMAT=tle"
   },
   {
     "name": "beidou",
     "label-pl": "Beidou",
     "label-en": "Beidou",
+    "label-tr": "Beidou",
     "url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=beidou&FORMAT=tle"
   }
 ]

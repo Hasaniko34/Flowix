@@ -16,5 +16,14 @@
       { "id": "tr-disable-satellites", "text": "Remove satellites" },
       { "id": "tr-satellites-available", "text": "Satellites available:" }
     ]
+  },
+  {
+    "language": "tr",
+    "strings": [
+      { "id": "tr-lighting", "text": "Aydınlatma" },
+      { "id": "tr-camera-lock", "text": "Kamera kilidi" },
+      { "id": "tr-disable-satellites", "text": "Uyduları kaldır" },
+      { "id": "tr-satellites-available", "text": "Mevcut uydular:" }
+    ]
   }
 ]
