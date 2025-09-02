@@ -26,14 +26,12 @@
         <div class="custom-control custom-switch">
           <input type="checkbox" class="custom-control-input" id="sw1" />
           <label class="custom-control-label" for="sw1" id="tr-lighting"
-            >Lighting</label
-          >
+            >Lighting</label>
         </div>
         <div class="custom-control custom-switch">
           <input type="checkbox" class="custom-control-input" id="sw2" />
           <label class="custom-control-label" for="sw2" id="tr-camera-lock"
-            >Camera lock</label
-          >
+            >Camera lock</label>
         </div>
 
         <div class="rows">
@@ -41,9 +39,7 @@
             class="cesium-button"
             type="button"
             id="tr-disable-satellites"
-          >
-          Remove satellites
-          </button>
+          >Remove satellites</button>
           <h4 id="tr-satellites-available">Satellites available:</h4>
           <div id="buttons-entry-point"></div>
         </div>
@@ -55,6 +51,17 @@
 
       <div id="fps-counter" class="toolbar">FPS: <span id="fps"></span></div>
     </div>
+
+    <div id="chatbot-container">
+      <div id="chatbot-messages"></div>
+      <div id="chatbot-input-container">
+        <input type="text" id="chatbot-input" placeholder="Ask the cosmos...">
+        <button id="chatbot-send">Send</button>
+      </div>
+    </div>
+    <button id="chatbot-toggle-button">
+        <i class="fa fa-comment"></i>
+    </button>
 
     <link
       rel="stylesheet"

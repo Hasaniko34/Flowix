@@ -4,12 +4,13 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
+const EslintWebpackPlugin = require('eslint-webpack-plugin');
 
 module.exports = [{
     mode: 'development',
     context: __dirname,
     entry: {
-        app: './src/index.js'
+        app: './src/index.ts'
     },
     output: {
         filename: '[name].js',
@@ -28,6 +29,7 @@ module.exports = [{
     },
     resolve: {
         mainFields: ['module', 'main'],
+        extensions: ['.ts', '.tsx', '.js'],
         alias: {
             cesium$: path.resolve(__dirname, 'node_modules/cesium/Source/Cesium.js'),
             cesium: path.resolve(__dirname, 'node_modules/cesium')
@@ -38,6 +40,10 @@ module.exports = [{
             test: /\.css$/,
             use: ['style-loader', 'css-loader']
         }, {
+           test: /\.ts$/,
+           use: 'ts-loader',
+           exclude: /node_modules/,
+         }, {
             test: /\.(png|jpg|jpeg|gif|svg|xml)$/,
             use: ['url-loader']
         }, {
@@ -73,7 +79,10 @@ module.exports = [{
             // Define relative base path in cesium for loading assets
             CESIUM_BASE_URL: JSON.stringify('')
         }),
-        new Dotenv()
+        new Dotenv(),
+        new EslintWebpackPlugin({
+           extensions: ['ts']
+        })
     ],
 
     // development server options
