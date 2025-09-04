@@ -1,6 +1,6 @@
 {
   "name": "sat-track",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Satellite tracker web app",
   "main": "index.js",
   "keywords": [
