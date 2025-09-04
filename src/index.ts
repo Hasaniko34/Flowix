@@ -16,7 +16,7 @@ import 'jquery/dist/jquery.min.js';
 import 'popper.js/dist/umd/popper.min.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
 
-import satellite from 'satellite.js';
+import * as satellite from 'satellite.js';
 
 //INIT
 Cesium.Ion.defaultAccessToken = process.env.ACCESS_TOKEN || ''; //token needed only to access Bing imagery
