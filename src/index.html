@@ -26,12 +26,14 @@
         <div class="custom-control custom-switch">
           <input type="checkbox" class="custom-control-input" id="sw1" />
           <label class="custom-control-label" for="sw1" id="tr-lighting"
-            >Lighting</label>
+            >Lighting</label
+          >
         </div>
         <div class="custom-control custom-switch">
           <input type="checkbox" class="custom-control-input" id="sw2" />
           <label class="custom-control-label" for="sw2" id="tr-camera-lock"
-            >Camera lock</label>
+            >Camera lock</label
+          >
         </div>
 
         <div class="rows">
@@ -43,6 +45,16 @@
           <h4 id="tr-satellites-available">Satellites available:</h4>
           <div id="buttons-entry-point"></div>
         </div>
+
+        <div id="legend">
+          <h4 id="tr-legend">Legend:</h4>
+          <div class="legend-item"><span class="legend-color" style="background-color: lime;"></span><span id="tr-nav">Navigation</span></div>
+          <div class="legend-item"><span class="legend-color" style="background-color: cyan;"></span><span id="tr-weather">Weather</span></div>
+          <div class="legend-item"><span class="legend-color" style="background-color: orange;"></span><span id="tr-comm">Communication</span></div>
+          <div class="legend-item"><span class="legend-color" style="background-color: magenta;"></span><span id="tr-science">Science/Station</span></div>
+          <div class="legend-item"><span class="legend-color" style="background-color: red;"></span><span id="tr-military">Military/Other</span></div>
+          <div class="legend-item"><span class="legend-color" style="background-color: white;"></span><span id="tr-default">Default</span></div>
+        </div>
       </div>
 
       <div id="progress-bar" class="toolbar" style="visibility: hidden">
@@ -50,6 +62,13 @@
       </div>
 
       <div id="fps-counter" class="toolbar">FPS: <span id="fps"></span></div>
+    </div>
+
+    <div id="info-panel" class="toolbar" style="display: none;">
+      <h3 id="info-panel-title"></h3>
+      <p><strong id="tr-period">Period:</strong> <span id="info-panel-period"></span> min</p>
+      <p><strong id="tr-altitude">Altitude:</strong> <span id="info-panel-altitude"></span> km</p>
+      <p><strong id="tr-velocity">Velocity:</strong> <span id="info-panel-velocity"></span> km/s</p>
     </div>
 
     <div id="chatbot-container">

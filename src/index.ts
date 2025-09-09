@@ -72,6 +72,13 @@ let displayedOrbit: [satellite.SatRec, number] | undefined = undefined; //displa
 let lastOrbitUpdateTime = Cesium.JulianDate.now();
 let currentlySelected: Cesium.Entity | undefined = undefined;
 
+// Info Panel Elements
+const infoPanel = document.getElementById('info-panel') as HTMLDivElement;
+const infoPanelTitle = document.getElementById('info-panel-title') as HTMLHeadingElement;
+const infoPanelPeriod = document.getElementById('info-panel-period') as HTMLSpanElement;
+const infoPanelAltitude = document.getElementById('info-panel-altitude') as HTMLSpanElement;
+const infoPanelVelocity = document.getElementById('info-panel-velocity') as HTMLSpanElement;
+
 //IMPORT DATA FROM JSON FILES
 import TLEsources from './TLEsources.json'; //TLE satellites data sources
 import translations from './translations.json'; //translations data
@@ -180,11 +187,23 @@ const orbitIcrf = (_scene: Cesium.Scene, time: Cesium.JulianDate) => {
     }
 }
 
+const getSatelliteColor = (satName: string): Cesium.Color => {
+    const upperCaseName = satName.toUpperCase();
+    if (upperCaseName.includes('GPS')) return Cesium.Color.LIME; // Navigation
+    if (upperCaseName.includes('NOAA') || upperCaseName.includes('METEOSAT') || upperCaseName.includes('METEOR')) return Cesium.Color.CYAN; // Weather
+    if (upperCaseName.includes('STARLINK') || upperCaseName.includes('ONEWEB') || upperCaseName.includes('IRIDIUM')) return Cesium.Color.ORANGE; // Communication
+    if (upperCaseName.includes('ISS') || upperCaseName.includes('TIANGONG') || upperCaseName.includes('HUBBLE')) return Cesium.Color.MAGENTA; // Science/Station
+    if (upperCaseName.includes('COSMOS') || upperCaseName.includes('USA') || upperCaseName.includes('NROL')) return Cesium.Color.RED; // Military/Other
+    return Cesium.Color.WHITE; // Default
+};
+
 const addSatelliteMarker = ([satName, satrec]: [string, satellite.SatRec]) => {
     const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
     if (typeof posvel.position === 'boolean') return;
     const gmst = satellite.gstime(Cesium.JulianDate.toDate(clock.currentTime));
     const pos = Object.values(satellite.eciToEcf(posvel.position, gmst)).map((el: number) => el *= 1000); //position km->m
+
+    const color = getSatelliteColor(satName);
 
     const entity = new Cesium.Entity({
         name: satName,
@@ -192,7 +211,7 @@ const addSatelliteMarker = ([satName, satrec]: [string, satellite.SatRec]) => {
     });
     entity.point = new Cesium.PointGraphics({
         pixelSize: 8,
-        color: Cesium.Color.YELLOW,
+        color: color,
     });
     entity.label = new Cesium.LabelGraphics({
         show: new Cesium.ConstantProperty(false),
@@ -278,13 +297,35 @@ const updateSatellites = () => { //updates satellites positions
                 if (typeof posvel.position === 'boolean') throw new Error('Satellite position is boolean');
                 const pos = Object.values(satellite.eciToEcf(posvel.position, gmst)).map((el: number) => el *= 1000); //position km->m
 
-                (entities.values[index].position as Cesium.PositionProperty) = new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromArray(pos)); //update satellite position
-                (entities.values[index].point as Cesium.PointGraphics).color = new Cesium.ConstantProperty(Cesium.Color.YELLOW); //update point color
+                const entity = entities.values[index];
+                (entity.position as Cesium.PositionProperty) = new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromArray(pos)); //update satellite position
+                
+                // If this satellite is the selected one, update the info panel
+                if (currentlySelected && currentlySelected.id === entity.id) {
+                    updateInfoPanel(currentlySelected.name || "Unknown Satellite", satrec);
+                }
+
             } catch (error) {
                 (entities.values[index].point as Cesium.PointGraphics).color = new Cesium.ConstantProperty(Cesium.Color.RED); //update point color
             }
         });
     }
+};
+
+const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
+    const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
+    if (typeof posvel.position === 'boolean' || typeof posvel.velocity === 'boolean') return;
+
+    const period = (2 * Math.PI) / satrec.no; // orbital period in minutes
+    const velocity = Math.sqrt(posvel.velocity.x ** 2 + posvel.velocity.y ** 2 + posvel.velocity.z ** 2);
+    const altitude = Math.sqrt(posvel.position.x ** 2 + posvel.position.y ** 2 + posvel.position.z ** 2) - 6371; // Subtract Earth's radius
+
+    infoPanelTitle.innerText = satName;
+    infoPanelPeriod.innerText = period.toFixed(2);
+    infoPanelAltitude.innerText = altitude.toFixed(2);
+    infoPanelVelocity.innerText = velocity.toFixed(2);
+
+    infoPanel.style.display = 'block';
 };
 
 const setLoadingData = (bool: boolean) => { //shows loading bar
@@ -409,6 +450,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
             const satData = satellitesData.find(el => el[0] === pickedEntity.name);
             if (satData) {
                 calculateOrbit(satData[1]);
+                updateInfoPanel(pickedEntity.name || "Unknown Satellite", satData[1]);
             }
             currentlySelected = pickedEntity;
         }
@@ -418,6 +460,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
             currentlySelected.label.show = new Cesium.ConstantProperty(false);
             clearOrbit();
             currentlySelected = undefined;
+            infoPanel.style.display = 'none';
         }
     }
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);

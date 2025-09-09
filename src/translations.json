@@ -23,7 +23,17 @@
       { "id": "tr-lighting", "text": "Aydınlatma" },
       { "id": "tr-camera-lock", "text": "Kamera kilidi" },
       { "id": "tr-disable-satellites", "text": "Uyduları kaldır" },
-      { "id": "tr-satellites-available", "text": "Mevcut uydular:" }
+      { "id": "tr-satellites-available", "text": "Mevcut uydular:" },
+      { "id": "tr-legend", "text": "Lejant:" },
+      { "id": "tr-nav", "text": "Navigasyon" },
+      { "id": "tr-weather", "text": "Hava Durumu" },
+      { "id": "tr-comm", "text": "İletişim" },
+      { "id": "tr-science", "text": "Bilim/İstasyon" },
+      { "id": "tr-military", "text": "Askeri/Diğer" },
+      { "id": "tr-default", "text": "Varsayılan" },
+      { "id": "tr-period", "text": "Periyot:" },
+      { "id": "tr-altitude", "text": "Yükseklik:" },
+      { "id": "tr-velocity", "text": "Hız:" }
     ]
   }
 ]
