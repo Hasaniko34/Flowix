@@ -402,7 +402,7 @@ const chatbotSendButton = document.getElementById('chatbot-send') as HTMLButtonE
 const chatbotInput = document.getElementById('chatbot-input') as HTMLInputElement;
 const chatbotMessages = document.getElementById('chatbot-messages') as HTMLDivElement;
 
-const apiKey = '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';
+const apiKey = process.env.OPENAI_API_KEY || '';
 const apiUrl = 'https://api.openai.com/v1/chat/completions';
 
 const addMessage = (message: string, sender: 'user' | 'bot') => {
@@ -422,7 +422,7 @@ const getBotResponse = async (userMessage: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
