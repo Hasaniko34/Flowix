@@ -70,6 +70,7 @@ const orbitSteps = 44; //number of steps in predicted orbit
 let satellitesData: [string, satellite.SatRec][] = []; //currently displayed satellites TLE data (name, satrec)
 let displayedOrbit: [satellite.SatRec, number] | undefined = undefined; //displayed orbit data [satrec, refresh time in seconds]
 let lastOrbitUpdateTime = Cesium.JulianDate.now();
+let currentlySelected: Cesium.Entity | undefined = undefined;
 
 //IMPORT DATA FROM JSON FILES
 import TLEsources from './TLEsources.json'; //TLE satellites data sources
@@ -371,25 +372,52 @@ viewer.screenSpaceEventHandler.setInputAction(() => { }, Cesium.ScreenSpaceEvent
 
 const handler = new Cesium.ScreenSpaceEventHandler(scene.canvas); //custom event handler
 handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left click input action
-    const picked = scene.pick(input.position);
-    if (picked) {
-        const entity = Cesium.defaultValue(picked.id, picked.primitive.id);
-        if (entity instanceof Cesium.Entity) {
-            const labelShow = entity.label?.show;
-            if (labelShow && labelShow.getValue && labelShow.getValue() === false) {
-                if (entity.label) {
-                    entity.label.show = new Cesium.ConstantProperty(true);
-                }
-                const satData = satellitesData.find(el => el[0] === entity.name);
-                if (satData) {
-                    calculateOrbit(satData[1]);
-                }
-            } else {
-                if (entity.label) {
-                    entity.label.show = new Cesium.ConstantProperty(false);
-                }
-                clearOrbit();
+    const pickedObject = scene.pick(input.position);
+
+    if (pickedObject && pickedObject.id instanceof Cesium.Entity) {
+        const pickedEntity = pickedObject.id;
+
+        if (currentlySelected && currentlySelected.id === pickedEntity.id) {
+            // Second click on the same satellite: query chatbot
+            const satName = pickedEntity.name;
+            const query = `${satName} uydusu hakkında bilgi ver`;
+            chatbotInput.value = query;
+            sendMessage();
+
+            // Make sure the chatbot is visible
+            if (!chatbotContainer.classList.contains('visible')) {
+                chatbotContainer.classList.add('visible');
             }
+
+            // Deselect after querying
+            if (pickedEntity.label) {
+                pickedEntity.label.show = new Cesium.ConstantProperty(false);
+            }
+            clearOrbit();
+            currentlySelected = undefined;
+        } else {
+            // First click on a new satellite: select it
+            // Deselect previously selected entity
+            if (currentlySelected && currentlySelected.label) {
+                currentlySelected.label.show = new Cesium.ConstantProperty(false);
+            }
+
+            // Select the new entity
+            if (pickedEntity.label) {
+                pickedEntity.label.show = new Cesium.ConstantProperty(true);
+            }
+            const satData = satellitesData.find(el => el[0] === pickedEntity.name);
+            if (satData) {
+                calculateOrbit(satData[1]);
+            }
+            currentlySelected = pickedEntity;
+        }
+    } else {
+        // Clicked on empty space: deselect everything
+        if (currentlySelected && currentlySelected.label) {
+            currentlySelected.label.show = new Cesium.ConstantProperty(false);
+            clearOrbit();
+            currentlySelected = undefined;
         }
     }
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
