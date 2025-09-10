@@ -36,7 +36,8 @@
       { "id": "tr-velocity", "text": "Hız:" },
       { "id": "tr-country", "text": "Ülke:" },
       { "id": "tr-purpose", "text": "Amaç:" },
-      { "id": "tr-launch-date", "text": "Fırlatma Tarihi:" }
+      { "id": "tr-apogee", "text": "En Yüksek:" },
+      { "id": "tr-perigee", "text": "En Alçak:" }
     ]
   }
 ]

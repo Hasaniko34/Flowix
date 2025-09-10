@@ -80,12 +80,44 @@ const infoPanelAltitude = document.getElementById('info-panel-altitude') as HTML
 const infoPanelVelocity = document.getElementById('info-panel-velocity') as HTMLSpanElement;
 const infoPanelCountry = document.getElementById('info-panel-country') as HTMLSpanElement;
 const infoPanelPurpose = document.getElementById('info-panel-purpose') as HTMLSpanElement;
-const infoPanelLaunchDate = document.getElementById('info-panel-launch-date') as HTMLSpanElement;
+const infoPanelApogee = document.getElementById('info-panel-apogee') as HTMLSpanElement;
+const infoPanelPerigee = document.getElementById('info-panel-perigee') as HTMLSpanElement;
+
+// SATELLITE CATALOG
+interface SatCatEntry {
+    apogee: string;
+    perigee: string;
+}
+const satelliteCatalog = new Map<string, SatCatEntry>();
+
+const loadSatelliteCatalog = async () => {
+    console.log("Loading satellite catalog...");
+    const proxyUrl = 'https://cors-noproblem.onrender.com/';
+    const satCatUrl = 'https://celestrak.org/pub/satcat.txt';
+    try {
+        const response = await fetch(proxyUrl + satCatUrl);
+        const text = await response.text();
+        const lines = text.split(/\r?\n/);
+        lines.forEach(line => {
+            // Final, correct parsing based on the official satcat-format.php
+            const noradId = line.substring(13, 18).trim();
+            const apogee = line.substring(93, 100).trim();
+            const perigee = line.substring(101, 108).trim();
+
+            if (noradId) {
+                satelliteCatalog.set(noradId, { apogee, perigee });
+            }
+        });
+        console.log(`Satellite catalog loaded with ${satelliteCatalog.size} entries.`);
+    } catch (error) {
+        console.error("Could not load satellite catalog:", error);
+    }
+};
+loadSatelliteCatalog(); // Load catalog on startup
 
 //IMPORT DATA FROM JSON FILES
 import TLEsources from './TLEsources.json'; //TLE satellites data sources
 import translations from './translations.json'; //translations data
-import satelliteExtraData from './satellite-data.json';
 
 //SET UI STRINGS DEPENDING ON BROWSER LANGUAGE
 const userLang = (navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage || 'en').slice(0, 2);
@@ -304,9 +336,8 @@ const updateSatellites = () => { //updates satellites positions
                 const entity = entities.values[index];
                 (entity.position as Cesium.PositionProperty) = new Cesium.ConstantPositionProperty(Cesium.Cartesian3.fromArray(pos)); //update satellite position
                 
-                // If this satellite is the selected one, update the info panel
                 if (currentlySelected && currentlySelected.id === entity.id) {
-                    updateInfoPanel(currentlySelected.name || "Unknown Satellite", satrec);
+                    updateLiveInfoPanelData(satrec);
                 }
 
             } catch (error) {
@@ -316,8 +347,7 @@ const updateSatellites = () => { //updates satellites positions
     }
 };
 
-const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
-    // Live Data Calculation
+const updateLiveInfoPanelData = (satrec: satellite.SatRec) => {
     const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
     if (typeof posvel.position === 'boolean' || typeof posvel.velocity === 'boolean') return;
 
@@ -325,20 +355,84 @@ const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
     const velocity = Math.sqrt(posvel.velocity.x ** 2 + posvel.velocity.y ** 2 + posvel.velocity.z ** 2);
     const altitude = Math.sqrt(posvel.position.x ** 2 + posvel.position.y ** 2 + posvel.position.z ** 2) - 6371; // Subtract Earth's radius
 
-    // Static Data Retrieval
-    const extraData = satelliteExtraData.find(sat => satName.toUpperCase().includes(sat.name.toUpperCase()));
-
-    // Update Panel
-    infoPanelTitle.innerText = satName;
-
-    infoPanelCountry.innerText = extraData ? `${extraData.flag} ${extraData.country}` : 'N/A';
-    infoPanelPurpose.innerText = extraData ? extraData.purpose : 'N/A';
-    infoPanelLaunchDate.innerText = extraData ? extraData.launch_date : 'N/A';
-
     infoPanelPeriod.innerText = period.toFixed(2);
     infoPanelAltitude.innerText = altitude.toFixed(2);
     infoPanelVelocity.innerText = velocity.toFixed(2);
+}
 
+const getCountryInfoFromName = (satName: string): { countryName: string, flag: string } => {
+    const upperCaseName = satName.toUpperCase();
+    if (upperCaseName.includes('USA') || upperCaseName.includes('GPS') || upperCaseName.includes('IRIDIUM') || upperCaseName.includes('STARLINK') || upperCaseName.includes('NOAA') || upperCaseName.includes('GOES') || upperCaseName.includes('NROL')) {
+        return { countryName: "USA", flag: "🇺🇸" };
+    }
+    if (upperCaseName.includes('GLONASS') || upperCaseName.includes('COSMOS') || upperCaseName.includes('METEOR')) {
+        return { countryName: "Russia", flag: "🇷🇺" };
+    }
+    if (upperCaseName.includes('PRC') || upperCaseName.includes('BEIDOU') || upperCaseName.includes('TIANGONG') || upperCaseName.includes('FENGYUN')) {
+        return { countryName: "China", flag: "🇨🇳" };
+    }
+    if (upperCaseName.includes('ESA') || upperCaseName.includes('GALILEO') || upperCaseName.includes('METEOSAT') || upperCaseName.includes('SENTINEL')) {
+        return { countryName: "European Space Agency", flag: "🇪🇺" };
+    }
+    if (upperCaseName.includes('UK') || upperCaseName.includes('ONEWEB')) {
+        return { countryName: "United Kingdom", flag: "🇬🇧" };
+    }
+    if (upperCaseName.includes('JPN')) {
+        return { countryName: "Japan", flag: "🇯🇵" };
+    }
+    if (upperCaseName.includes('IND')) {
+        return { countryName: "India", flag: "🇮🇳" };
+    }
+    if (upperCaseName.includes('CA')) {
+        return { countryName: "Canada", flag: "🇨🇦" };
+    }
+    if (upperCaseName.includes('ISS')) {
+        return { countryName: "International", flag: "🌍" };
+    }
+    return { countryName: "Unknown", flag: "🛰️" };
+}
+
+const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
+    // Data Retrieval from Catalog
+    const noradId = satrec.satnum.trim();
+    const catalogData = satelliteCatalog.get(noradId);
+
+    // Update Panel Title
+    infoPanelTitle.innerText = satName;
+
+    // Country and Flag (Inferred from Name)
+    const { countryName, flag } = getCountryInfoFromName(satName);
+    infoPanelCountry.innerText = `${flag} ${countryName}`;
+
+    // Orbit Info from Catalog
+    infoPanelApogee.innerText = catalogData?.apogee || 'N/A';
+    infoPanelPerigee.innerText = catalogData?.perigee || 'N/A';
+
+    // Infer purpose from name
+    const purposeTranslations: { [key: string]: string } = {
+        "Navigation": "Navigasyon",
+        "Weather": "Hava Durumu",
+        "Communication": "İletişim",
+        "Science/Station": "Bilim/İstasyon",
+        "Military/Other": "Askeri/Diğer",
+        "Unknown": "Bilinmiyor"
+    };
+
+    let purpose = "Unknown";
+    const upperCaseName = satName.toUpperCase();
+    if (upperCaseName.includes('GPS') || upperCaseName.includes('GLONASS') || upperCaseName.includes('GALILEO') || upperCaseName.includes('BEIDOU')) purpose = "Navigation";
+    else if (upperCaseName.includes('NOAA') || upperCaseName.includes('METEOSAT') || upperCaseName.includes('METEOR') || upperCaseName.includes('GOES')) purpose = "Weather";
+    else if (upperCaseName.includes('STARLINK') || upperCaseName.includes('ONEWEB') || upperCaseName.includes('IRIDIUM')) purpose = "Communication";
+    else if (upperCaseName.includes('ISS') || upperCaseName.includes('TIANGONG') || upperCaseName.includes('HUBBLE')) purpose = "Science/Station";
+    else if (upperCaseName.includes('COSMOS') || upperCaseName.includes('USA') || upperCaseName.includes('NROL')) purpose = "Military/Other";
+    
+    const translatedPurpose = userLang === 'tr' ? purposeTranslations[purpose] || purpose : purpose;
+    infoPanelPurpose.innerText = translatedPurpose;
+
+    // Update live data for the first time
+    updateLiveInfoPanelData(satrec);
+
+    // Show panel
     infoPanel.style.display = 'block';
 };
 
