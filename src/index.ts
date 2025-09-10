@@ -71,10 +71,12 @@ let satellitesData: [string, satellite.SatRec][] = []; //currently displayed sat
 let displayedOrbit: [satellite.SatRec, number] | undefined = undefined; //displayed orbit data [satrec, refresh time in seconds]
 let lastOrbitUpdateTime = Cesium.JulianDate.now();
 let currentlySelected: Cesium.Entity | undefined = undefined;
+let footprintEntity: Cesium.Entity | undefined = undefined;
 
 // Info Panel Elements
 const infoPanel = document.getElementById('info-panel') as HTMLDivElement;
 const infoPanelTitle = document.getElementById('info-panel-title') as HTMLHeadingElement;
+const infoPanelCoverage = document.getElementById('info-panel-coverage') as HTMLSpanElement;
 const infoPanelPeriod = document.getElementById('info-panel-period') as HTMLSpanElement;
 const infoPanelAltitude = document.getElementById('info-panel-altitude') as HTMLSpanElement;
 const infoPanelVelocity = document.getElementById('info-panel-velocity') as HTMLSpanElement;
@@ -315,6 +317,48 @@ const clearOrbit = () => {
     polylines.removeAll();
 }
 
+const drawFootprint = (satrec: satellite.SatRec) => {
+    const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
+    if (typeof posvel.position === 'boolean' || !posvel.position) return;
+
+    const gmst = satellite.gstime(Cesium.JulianDate.toDate(clock.currentTime));
+    const positionEcf = satellite.eciToEcf(posvel.position, gmst);
+    if (typeof positionEcf === 'boolean') return;
+
+    const positionCartesian = new Cesium.Cartesian3(positionEcf.x * 1000, positionEcf.y * 1000, positionEcf.z * 1000);
+    
+    const cartographic = Cesium.Cartographic.fromCartesian(positionCartesian);
+    const subSatellitePosition = Cesium.Cartesian3.fromRadians(cartographic.longitude, cartographic.latitude, 0);
+    const altitude = cartographic.height;
+
+    // Calculate footprint radius more accurately using great-circle distance
+    const earthRadius = 6371000; // meters
+    const footprintRadius = earthRadius * Math.acos(earthRadius / (earthRadius + altitude));
+
+    if (footprintEntity) {
+        viewer.entities.remove(footprintEntity);
+    }
+
+    footprintEntity = viewer.entities.add(new Cesium.Entity({
+        position: subSatellitePosition,
+        ellipse: new Cesium.EllipseGraphics({
+            semiMajorAxis: new Cesium.ConstantProperty(footprintRadius),
+            semiMinorAxis: new Cesium.ConstantProperty(footprintRadius),
+            material: Cesium.Color.GREEN.withAlpha(0.3),
+            outline: true,
+            outlineColor: Cesium.Color.GREEN,
+            height: new Cesium.ConstantProperty(1000.0),
+        }),
+    }));
+};
+
+const removeFootprint = () => {
+    if (footprintEntity) {
+        viewer.entities.remove(footprintEntity);
+        footprintEntity = undefined;
+    }
+};
+
 const updateOrbit = () => {
     if (displayedOrbit !== undefined) {
         if (clock.currentTime.equalsEpsilon(lastOrbitUpdateTime, displayedOrbit[1]) === false) {
@@ -403,6 +447,20 @@ const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
     // Country and Flag (Inferred from Name)
     const { countryName, flag } = getCountryInfoFromName(satName);
     infoPanelCountry.innerText = `${flag} ${countryName}`;
+
+    // Coverage Area Calculation
+    const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
+    if (typeof posvel.position !== 'boolean' && posvel.position) {
+        const positionCartesian = new Cesium.Cartesian3(posvel.position.x * 1000, posvel.position.y * 1000, posvel.position.z * 1000);
+        const cartographic = Cesium.Cartographic.fromCartesian(positionCartesian);
+        const altitude = cartographic.height;
+        const earthRadius = 6371000; // meters
+        const coverageRadius = earthRadius * Math.acos(earthRadius / (earthRadius + altitude));
+        const coverageArea = 2 * Math.PI * Math.pow(earthRadius / 1000, 2) * (1 - Math.cos(coverageRadius / earthRadius));
+        infoPanelCoverage.innerText = coverageArea.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    } else {
+        infoPanelCoverage.innerText = 'N/A';
+    }
 
     // Orbit Info from Catalog
     infoPanelApogee.innerText = catalogData?.apogee || 'N/A';
@@ -543,6 +601,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
                 pickedEntity.label.show = new Cesium.ConstantProperty(false);
             }
             clearOrbit();
+            removeFootprint();
             currentlySelected = undefined;
         } else {
             // First click on a new satellite: select it
@@ -550,6 +609,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
             if (currentlySelected && currentlySelected.label) {
                 currentlySelected.label.show = new Cesium.ConstantProperty(false);
             }
+            removeFootprint(); // Remove footprint of the previously selected satellite
 
             // Select the new entity
             if (pickedEntity.label) {
@@ -558,6 +618,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
             const satData = satellitesData.find(el => el[0] === pickedEntity.name);
             if (satData) {
                 calculateOrbit(satData[1]);
+                drawFootprint(satData[1]);
                 updateInfoPanel(pickedEntity.name || "Unknown Satellite", satData[1]);
             }
             currentlySelected = pickedEntity;
@@ -567,6 +628,7 @@ handler.setInputAction((input: { position: Cesium.Cartesian2 }) => { //left clic
         if (currentlySelected && currentlySelected.label) {
             currentlySelected.label.show = new Cesium.ConstantProperty(false);
             clearOrbit();
+            removeFootprint();
             currentlySelected = undefined;
             infoPanel.style.display = 'none';
         }

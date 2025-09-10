@@ -37,7 +37,8 @@
       { "id": "tr-country", "text": "Ülke:" },
       { "id": "tr-purpose", "text": "Amaç:" },
       { "id": "tr-apogee", "text": "En Yüksek:" },
-      { "id": "tr-perigee", "text": "En Alçak:" }
+      { "id": "tr-perigee", "text": "En Alçak:" },
+      { "id": "tr-coverage", "text": "Kapsama Alanı:" }
     ]
   }
 ]
