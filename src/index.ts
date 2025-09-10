@@ -190,11 +190,23 @@ sw2.onclick = () => {
 }
 
 //deletes all satellites
-const deleteSatellites = () => {
-    satellitesData = [];
+const deleteSatellites = (filter: string | null = null) => {
+    if (filter) {
+        const filteredEntities = entities.values.filter(entity => entity.name && entity.name.toUpperCase().includes(filter.toUpperCase()));
+        const entitiesToRemove = entities.values.filter(entity => !filteredEntities.includes(entity));
+        entitiesToRemove.forEach(entity => entities.remove(entity));
+        satellitesData = satellitesData.filter(([satName]) => satName.toUpperCase().includes(filter.toUpperCase()));
+    } else {
+        satellitesData = [];
+        entities.removeAll();
+    }
     displayedOrbit = undefined;
     polylines.removeAll();
-    entities.removeAll();
+    removeFootprint();
+    if (currentlySelected) {
+        infoPanel.style.display = 'none';
+        currentlySelected = undefined;
+    }
 }
 
 //camera lock functions
@@ -642,6 +654,7 @@ handler.setInputAction(() => { //mouse scroll
 const chatbotSendButton = document.getElementById('chatbot-send') as HTMLButtonElement;
 const chatbotInput = document.getElementById('chatbot-input') as HTMLInputElement;
 const chatbotMessages = document.getElementById('chatbot-messages') as HTMLDivElement;
+const chatbotQuickMessages = document.getElementById('chatbot-quick-messages') as HTMLDivElement;
 
 const apiKey = process.env.OPENAI_API_KEY || '';
 const apiUrl = 'https://api.openai.com/v1/chat/completions';
@@ -689,15 +702,103 @@ const getBotResponse = async (userMessage: string) => {
   }
 };
 
+const executeCommand = (command: string) => {
+    const lowerCaseCommand = command.toLowerCase();
+
+    if (lowerCaseCommand.includes('göster')) {
+        const match = lowerCaseCommand.match(/(?:tüm\s)?(.+?)\s*uydularını göster/);
+        if (match && match[1]) {
+            const filter = match[1].trim().toUpperCase();
+            addMessage(`"${filter}" uyduları filtreleniyor...`, 'bot');
+            deleteSatellites(filter);
+        } else {
+            addMessage('Filtrelenecek uydu türünü anlayamadım. Örneğin: "Tüm GPS uydularını göster"', 'bot');
+        }
+    } else if (lowerCaseCommand.includes('takip et')) {
+        const match = lowerCaseCommand.match(/(.+?)\s*takip et/);
+        if (match && match[1]) {
+            const satName = match[1].trim().toUpperCase();
+            const satelliteEntity = entities.values.find(entity => entity.name && entity.name.toUpperCase() === satName);
+            if (satelliteEntity) {
+                viewer.trackedEntity = satelliteEntity;
+                addMessage(`"${satelliteEntity.name}" takip ediliyor...`, 'bot');
+            } else {
+                addMessage(`"${satName}" adında bir uydu bulunamadı.`, 'bot');
+            }
+        } else {
+            addMessage('Takip edilecek uydu adını anlayamadım. Örneğin: "ISS\'i takip et"', 'bot');
+        }
+    } else if (lowerCaseCommand.includes('üzerindeki')) {
+        const match = lowerCaseCommand.match(/(.+?)\s*üzerindeki\s*(.+?)\s*uyduları/);
+        if (match && match[1] && match[2]) {
+            const location = match[1].trim();
+            const type = match[2].trim().toUpperCase();
+            addMessage(`"${location}" üzerindeki "${type}" uyduları aranıyor...`, 'bot');
+            // NOTE: This is a simplified implementation. A real implementation would
+            // require a geocoding service to get coordinates for the location.
+            // We will use a placeholder for Istanbul for this example.
+            if (location.toUpperCase() === 'İSTANBUL') {
+                const istanbulLat = 41.0082;
+                const istanbulLon = 28.9784;
+                const radius = 10; // degrees
+
+                const filteredSatellites = satellitesData.filter(([satName, satrec]) => {
+                    const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
+                    if (typeof posvel.position === 'boolean' || !posvel.position) return false;
+
+                    const gmst = satellite.gstime(Cesium.JulianDate.toDate(clock.currentTime));
+                    const positionEcf = satellite.eciToEcf(posvel.position, gmst);
+                    if (typeof positionEcf === 'boolean') return false;
+                    
+                    const positionCartesian = new Cesium.Cartesian3(positionEcf.x * 1000, positionEcf.y * 1000, positionEcf.z * 1000);
+                    const cartographic = Cesium.Cartographic.fromCartesian(positionCartesian);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+
+                    const isNear = Math.abs(lat - istanbulLat) < radius && Math.abs(lon - istanbulLon) < radius;
+                    const isType = satName.toUpperCase().includes(type);
+
+                    return isNear && isType;
+                });
+
+                const filteredNames = filteredSatellites.map(([satName]) => satName.toUpperCase());
+                deleteSatellites(null); // Clear all satellites first
+                filteredSatellites.forEach(sat => addSatelliteMarker(sat));
+                satellitesData = filteredSatellites;
+
+                if (filteredSatellites.length > 0) {
+                    addMessage(`${filteredSatellites.length} uydu bulundu.`, 'bot');
+                } else {
+                    addMessage(`Belirtilen konumda ve türde uydu bulunamadı.`, 'bot');
+                }
+            } else {
+                addMessage(`"${location}" için konum bilgisi bulunamadı.`, 'bot');
+            }
+        } else {
+            addMessage('Komutu anlayamadım. Örneğin: "İstanbul üzerindeki iletişim uyduları"', 'bot');
+        }
+    } else {
+        addMessage(`Komut alindi: "${command}"`, 'bot');
+        // NOTE: Other command logic will be added in subsequent steps.
+    }
+};
+
 const sendMessage = async () => {
-  const userMessage = chatbotInput.value.trim();
-  if (userMessage === '') return;
+    const userMessage = chatbotInput.value.trim();
+    if (userMessage === '') return;
 
-  addMessage(userMessage, 'user');
-  chatbotInput.value = '';
+    addMessage(userMessage, 'user');
+    chatbotInput.value = '';
 
-  const botMessage = await getBotResponse(userMessage);
-  addMessage(botMessage, 'bot');
+    const commandRegex = /(.+?)\s*(göster|takip et|üzerindeki)/i;
+    const match = userMessage.match(commandRegex);
+
+    if (match) {
+        executeCommand(userMessage);
+    } else {
+        const botMessage = await getBotResponse(userMessage);
+        addMessage(botMessage, 'bot');
+    }
 };
 
 chatbotSendButton.addEventListener('click', sendMessage);
@@ -711,3 +812,22 @@ chatbotInput.addEventListener('keypress', (e: KeyboardEvent) => {
 setTimeout(() => {
     addMessage("Selamlar, yıldız gözlemcisi! Ben senin göksel rehberinim. Bana evren hakkında her şeyi sorabilirsin.", "bot");
 }, 1000);
+
+// Quick Messages
+const quickMessages = [
+    "Tüm GPS uydularını göster",
+    "ISS'i takip et",
+    "İstanbul üzerindeki iletişim uyduları",
+    "En yakın uydu hangisi?",
+];
+
+quickMessages.forEach(msg => {
+    const button = document.createElement('button');
+    button.innerText = msg;
+    button.classList.add('quick-message');
+    button.onclick = () => {
+        chatbotInput.value = msg;
+        sendMessage();
+    };
+    chatbotQuickMessages.appendChild(button);
+});

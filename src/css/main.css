@@ -162,6 +162,30 @@ input[disabled] + label.custom-control-label {
   padding-top: 15px;
 }
 
+#chatbot-quick-messages {
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.quick-message {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+}
+
+.quick-message:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 #chatbot-input {
   flex-grow: 1;
   border: none;
