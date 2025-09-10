@@ -78,10 +78,14 @@ const infoPanelTitle = document.getElementById('info-panel-title') as HTMLHeadin
 const infoPanelPeriod = document.getElementById('info-panel-period') as HTMLSpanElement;
 const infoPanelAltitude = document.getElementById('info-panel-altitude') as HTMLSpanElement;
 const infoPanelVelocity = document.getElementById('info-panel-velocity') as HTMLSpanElement;
+const infoPanelCountry = document.getElementById('info-panel-country') as HTMLSpanElement;
+const infoPanelPurpose = document.getElementById('info-panel-purpose') as HTMLSpanElement;
+const infoPanelLaunchDate = document.getElementById('info-panel-launch-date') as HTMLSpanElement;
 
 //IMPORT DATA FROM JSON FILES
 import TLEsources from './TLEsources.json'; //TLE satellites data sources
 import translations from './translations.json'; //translations data
+import satelliteExtraData from './satellite-data.json';
 
 //SET UI STRINGS DEPENDING ON BROWSER LANGUAGE
 const userLang = (navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage || 'en').slice(0, 2);
@@ -313,6 +317,7 @@ const updateSatellites = () => { //updates satellites positions
 };
 
 const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
+    // Live Data Calculation
     const posvel = satellite.propagate(satrec, Cesium.JulianDate.toDate(clock.currentTime));
     if (typeof posvel.position === 'boolean' || typeof posvel.velocity === 'boolean') return;
 
@@ -320,7 +325,16 @@ const updateInfoPanel = (satName: string, satrec: satellite.SatRec) => {
     const velocity = Math.sqrt(posvel.velocity.x ** 2 + posvel.velocity.y ** 2 + posvel.velocity.z ** 2);
     const altitude = Math.sqrt(posvel.position.x ** 2 + posvel.position.y ** 2 + posvel.position.z ** 2) - 6371; // Subtract Earth's radius
 
+    // Static Data Retrieval
+    const extraData = satelliteExtraData.find(sat => satName.toUpperCase().includes(sat.name.toUpperCase()));
+
+    // Update Panel
     infoPanelTitle.innerText = satName;
+
+    infoPanelCountry.innerText = extraData ? `${extraData.flag} ${extraData.country}` : 'N/A';
+    infoPanelPurpose.innerText = extraData ? extraData.purpose : 'N/A';
+    infoPanelLaunchDate.innerText = extraData ? extraData.launch_date : 'N/A';
+
     infoPanelPeriod.innerText = period.toFixed(2);
     infoPanelAltitude.innerText = altitude.toFixed(2);
     infoPanelVelocity.innerText = velocity.toFixed(2);

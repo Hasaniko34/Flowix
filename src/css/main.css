@@ -261,3 +261,9 @@ input[disabled] + label.custom-control-label {
   font-weight: bold;
   color: #f0f0f0;
 }
+
+#info-panel hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 10px 0;
+}
